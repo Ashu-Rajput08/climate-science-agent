@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.streamlit/secrets.toml
+experiments/runs/*
+!experiments/runs/.gitkeep
+experiments/chats/*
+!experiments/chats/.gitkeep
+plots/*
+!plots/.gitkeep
+reports/*
+!reports/.gitkeep
