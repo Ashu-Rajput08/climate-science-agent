@@ -1,0 +1,165 @@
+Metadata-Version: 2.4
+Name: autonomous-climate-scientist
+Version: 0.1.0
+Summary: Reproducible climate analysis for daily observations from Indian cities
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=2.1
+Requires-Dist: scipy>=1.11
+Requires-Dist: matplotlib>=3.9
+Requires-Dist: plotly>=5.20
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: langgraph>=0.2
+Requires-Dist: streamlit>=1.57
+Requires-Dist: supabase<3,>=2.0
+# Autonomous Climate Scientist
+
+A Streamlit research workspace for daily climate observations from ten Indian cities. Questions are interpreted by deterministic Python rules, filtered to the requested dates, analyzed with statistical methods, and returned with an answer and optional charts. Conversation history is private to the signed-in Supabase user; experiment records and reports are stored separately.
+
+## Features
+
+- Daily observations for Ahmedabad, Bangalore, Chennai, Delhi, Hyderabad, Jaipur, Kolkata, Lucknow, Mumbai, and Pune.
+- Date-aware questions: a year means January 1 through December 31; a year range includes every calendar year in the range. Explicit months and exact dates use those narrower intervals. No date in the question means the complete available period.
+- Per-city results for questions that do not name a city; city records are never pooled into one misleading national time series.
+- Descriptive summaries, trends, monthly and seasonal summaries, correlations, and seasonal-anomaly sensitivity analysis.
+- Optional, question-appropriate interactive charts. The chart panel starts collapsed; categorical frequencies are shown only where useful.
+- User-confirmed typo corrections. The original question remains in the conversation; the corrected wording is used for the analysis only after confirmation.
+- A chat history in the sidebar, manually renameable chats, and persistent user-scoped storage through Supabase.
+- Scientific notes and downloadable Markdown reports. Experiment data is stored separately from the chat message rows.
+- No retrieval-augmented generation (RAG), document index, embeddings, or external model API is required.
+
+## Project flow
+
+```mermaid
+flowchart TD
+    A[Question entered] --> B{Possible spelling correction?}
+    B -->|Yes| C[Ask user to confirm]
+    C -->|Confirm| D[Analyze corrected wording]
+    C -->|Decline| E[Analyze original wording]
+    B -->|No| F[Use original wording]
+    D --> G[Detect year, range, month, or exact dates]
+    E --> G
+    F --> G
+    G --> H[Filter India daily city records]
+    H --> I[Run deterministic analysis per selected city]
+    I --> J[Format answer and scientific notes]
+    J --> K{Useful chart available?}
+    K -->|User opens chart panel| L[Render filtered chart views]
+    K -->|No / not requested| M[Keep answer text only]
+    L --> N[Save chat and separate experiment record]
+    M --> N
+```
+
+## Data source
+
+The active dataset is [`india_2000_2024_daily_weather.csv`](india_2000_2024_daily_weather.csv).
+
+| Property | Value |
+|---|---|
+| Structure | 91,320 rows × 12 columns; one daily row per city and date |
+| Coverage | January 1, 2000 through December 31, 2024 |
+| Cities | 10 Indian cities listed above |
+| Quality in the inspected snapshot | No missing values; no duplicate city/date rows |
+| Date handling | Source values are date-only. The app interprets calendar boundaries on the project IST calendar; it does not shift the stored date values. |
+| Units and provider | Not specified in the CSV; the app does not invent them |
+
+Available climate fields:
+
+- `temperature_2m_max`
+- `temperature_2m_min`
+- `apparent_temperature_max`
+- `apparent_temperature_min`
+- `precipitation_sum`
+- `rain_sum`
+- `weather_code`
+- `wind_speed_10m_max`
+- `wind_gusts_10m_max`
+- `wind_direction_10m_dominant`
+
+Weather-code meanings and measurement units are not supplied in the data file. These are reported as source values without inferred definitions.
+
+## Time filters
+
+| User asks | Period applied |
+|---|---|
+| `What was the rainfall in 2020?` | January 1–December 31, 2020 |
+| `What was rainfall from 2018 to 2022?` | January 1, 2018–December 31, 2022, inclusive |
+| `What happened in March 2020?` | March 1–31, 2020 |
+| `What was rainfall on 2020-06-15?` | June 15, 2020 only |
+| No year or date range | Entire available dataset, 2000–2024 |
+
+Requests extending beyond the dataset are clipped to available coverage and the answer explains the limit. A date request fully outside the coverage returns an availability error. `FY2020` follows the project convention of calendar year 2020; `FY2020-21` means January 2020 through December 2021.
+
+## Chat and account storage
+
+Users sign in through Supabase. Each chat, message, and experiment query is scoped to the signed-in user. Chat names are generic until the user chooses **Rename selected chat** in the sidebar. Renames are saved to Supabase and do not change the conversation content.
+
+After updating an existing Supabase project, run the current [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL Editor. It is safe to rerun and adds the `title_is_custom` marker used to distinguish user-chosen names from old automatically generated names. The app shows an explanatory error if the database schema is behind.
+
+Required secrets, set in Streamlit Community Cloud → App settings → Secrets or local `.env`:
+
+```toml
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "your-publishable-key"
+```
+
+Never use a Supabase service-role key in the app or commit local secrets.
+
+## Project structure
+
+```text
+.
+├── app/
+│   └── streamlit_app.py              # Authentication, chat UI, sidebar, optional charts
+├── src/climate_scientist/
+│   ├── agent.py                      # Question interpretation, analysis orchestration, answers
+│   ├── chat_store.py                 # User-scoped chats and separate experiment storage
+│   ├── data.py                       # Active dataset loading, discovery, validation
+│   ├── plotly_visualizations.py      # Question-specific optional charts and India map
+│   ├── question_check.py             # Conservative typo suggestions requiring confirmation
+│   ├── science.py                    # Deterministic statistics and date-filtered frames
+│   ├── supabase_auth.py              # Supabase client and session helpers
+│   ├── time_range.py                 # Year, month, and date interval parsing
+│   ├── visualization.py              # Static plots for saved experiment records
+│   └── workflow.py                   # Workflow graph with a direct Python fallback
+├── supabase/schema.sql               # Tables, owner policies, and rename metadata
+├── india_2000_2024_daily_weather.csv # Active daily city data
+├── requirements.txt
+├── pyproject.toml
+└── README.md
+```
+
+## Run locally (Windows PowerShell)
+
+From the project directory in the VS Code terminal:
+
+```powershell
+py --list-paths
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+streamlit run app/streamlit_app.py
+```
+
+Set the two Supabase values in `.env` before launching. If the Python launcher reports no matching runtime, install a supported Python version and recreate `.venv`. If activation is blocked by PowerShell policy, run the app without activation using:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app/streamlit_app.py
+```
+
+The local app opens at `http://localhost:8501` unless that port is already in use.
+
+## Verification checklist
+
+- A single year selects all dates in January–December of that year.
+- A year range includes January of the first year through December of the last year.
+- An unspecified period uses the full source coverage.
+- User text remains unchanged when a spelling suggestion is confirmed; only analysis uses the accepted wording.
+- Charts are optional and are generated only for analyses with an appropriate visualization.
+- Data and chat access are restricted to the signed-in owner by Supabase row-level security.
+
+## Limitations
+
+This is an observational analysis tool, not a forecasting or causal-attribution system. Trends and correlations do not establish causes. City markers on the map are approximate display locations because coordinates are not included in the source CSV. The local filesystem on hosted Streamlit is ephemeral; Supabase is the persistent store for chats and experiment records.
+
