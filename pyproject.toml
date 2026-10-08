@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-climate-scientist"
+version = "0.1.0"
+description = "Reproducible climate analysis for daily observations from Indian cities"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pandas>=2.1", "scipy>=1.11", "matplotlib>=3.9", "plotly>=5.20",
+  "python-dotenv>=1.0", "langgraph>=0.2", "streamlit>=1.57",
+  "supabase>=2.0,<3"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
