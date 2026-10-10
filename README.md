@@ -24,7 +24,7 @@ This project brings these steps into one interactive research workflow.
 - **Scientific reporting:** Generate concise answers, methodological notes, and downloadable Markdown reports.
 - **Experiment provenance:** Store experiment records separately from chat messages.
 - **User-specific persistence:** Integrate Supabase authentication and row-level security for private chat and experiment storage.
-- **Reproducible computation:** Use deterministic Python functions for numerical analysis instead of relying on an LLM to produce scientific calculations.
+- **Reproducible computation:** Use deterministic Python functions for numerical analysis.
 
 ## Architecture
 
@@ -78,7 +78,7 @@ flowchart TB
     EXP --> DB
 ```
 
-The workflow is implemented using LangGraph with a direct Python fallback. Scientific calculations are performed by deterministic analysis functions. The current implementation does not use an LLM-based reasoning agent, RAG, or autonomous model-generated code.
+The workflow is implemented using LangGraph with a direct Python fallback. Scientific calculations are performed by deterministic analysis functions.
 
 ## Dataset
 
@@ -184,18 +184,13 @@ autonomous-climate-scientist/
 ├── streamlit/
 │   └── config.toml
 │
-├── experiments/
-│   ├── chats/
-│   └── runs/
-│
 ├── india_2000_2024_daily_weather.csv
-├── open-meteo-21.97N78.98E696m.csv
 ├── .env.example
 ├── .gitignore
 ├── pyproject.toml
 ├── requirements.txt
-├── README.md
-└── LICENSE
+└── README.md
+
 ```
 
 ### Main Components
@@ -265,7 +260,6 @@ Run the SQL script in `supabase/schema.sql` in the Supabase SQL Editor to create
 
 Use the same variables in Streamlit Community Cloud's app secrets when deploying.
 
-**Security:** Never commit `.env`, passwords, or Supabase service-role keys. The application should use the publishable key with authenticated, user-scoped access policies.
 
 ### 5. Launch the application
 
@@ -291,31 +285,7 @@ Add your own screenshots to `docs/images/` and replace the placeholders below.
 
 ![Interactive analysis filters](docs/images/analysis-filters.png)
 
-**Live application:** [Open the deployed app](<YOUR_STREAMLIT_APP_URL>)
+**Live application:** [Open the deployed app](<https://climate-science-agent-pqtbewy8xsmjyjobeboy8c.streamlit.app/>)
 
 **Demo video:** [Watch the project walkthrough](<YOUR_DEMO_VIDEO_URL>)
-
-## Reproducibility and Security
-
-- Original dataset values and date labels are preserved during analysis.
-- Temporal filters are explicit and bounded by available data.
-- Numerical computations use deterministic Python functions.
-- Experiment records and chat messages are stored separately.
-- Supabase row-level security restricts records to their authenticated owner.
-- Generated local experiment outputs and conversation files should not be committed to version control.
-
-## Limitations
-
-- The active analysis source covers ten selected cities, not all of India.
-- The data source does not provide measurement units or a weather-code legend.
-- The analysis is observational and does not establish causal relationships.
-- The application does not currently implement forecasting, deep-learning models, RAG, or LLM-driven autonomous scientific reasoning.
-- Hosted local filesystem storage is not treated as durable storage; persistent user data is handled through Supabase.
-
-## Future Directions
-
-Potential extensions include gridded climate datasets, forecasting experiments, uncertainty quantification, source-level validation, and comparative evaluation of machine-learning models.
-
-## License
-
-See [`LICENSE`](LICENSE) for the project's licensing terms.
+) for the project's licensing terms.
